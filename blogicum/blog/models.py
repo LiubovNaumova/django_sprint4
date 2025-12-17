@@ -3,10 +3,13 @@ from django.db import models
 
 from core.models import BaseModel
 
+
 User = get_user_model()
 
 
 class Category(BaseModel):
+    """Категория поста (например, «Путешествия», «Еда» и т.п.)."""
+
     title = models.CharField(
         max_length=256,
         verbose_name='Заголовок',
@@ -28,10 +31,13 @@ class Category(BaseModel):
         verbose_name_plural = 'Категории'
 
     def str(self):
+        """Строковое представление категории — её заголовок."""
         return self.title
 
 
 class Location(BaseModel):
+    """Локация, с которой связан пост (город, место и т.п.)."""
+
     name = models.CharField(
         max_length=256,
         verbose_name='Название места',
@@ -42,10 +48,13 @@ class Location(BaseModel):
         verbose_name_plural = 'Местоположения'
 
     def str(self):
+        """Строковое представление локации — её название."""
         return self.name
 
 
 class Post(BaseModel):
+    """Публикация в блоге."""
+
     title = models.CharField(
         max_length=256,
         verbose_name='Заголовок',
@@ -91,10 +100,13 @@ class Post(BaseModel):
         default_related_name = 'posts'
 
     def str(self):
+        """Строковое представление поста — его заголовок."""
         return self.title
 
 
 class Comment(models.Model):
+    """Комментарий к посту."""
+
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -119,4 +131,5 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def str(self):
+        """Краткое строковое представление комментария (первые 50 символов)."""
         return self.text[:50]
