@@ -12,7 +12,7 @@ class PublishedModel(models.Model):
 
 
 class Category(PublishedModel):
-    title = models.CharField('Заголовок', max_length=256)
+    title = models.CharField(max_length=256, verbose_name='Категория')
     description = models.TextField('Описание')
     slug = models.SlugField('Слаг', unique=True, max_length=64)
 
@@ -21,19 +21,19 @@ class Category(PublishedModel):
         verbose_name_plural = 'Категории'
         ordering = ('title',)
 
-    def str(self) -> str:
+    def __str__(self) -> str:
         return self.title
 
 
 class Location(PublishedModel):
-    name = models.CharField('Название места', max_length=256)
+    name = models.CharField(max_length=256, verbose_name='Местоположение')
 
     class Meta:
         verbose_name = 'Местоположение'
         verbose_name_plural = 'Местоположения'
         ordering = ('name',)
 
-    def str(self) -> str:
+    def __str__(self) -> str:
         return self.name
 
 
@@ -74,7 +74,7 @@ class Post(PublishedModel):
         verbose_name_plural = 'Публикации'
         ordering = ('-pub_date',)
 
-    def str(self) -> str:
+    def __str__(self) -> str:
         return self.title
 
     def get_absolute_url(self):
@@ -100,7 +100,7 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
-        ordering = ('created_at',)  # от старых к новым :contentReference[oaicite:1]{index=1}
+        ordering = ('created_at',)
 
-    def str(self) -> str:
+    def __str__(self) -> str:
         return self.text[:30]
