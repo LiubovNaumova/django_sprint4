@@ -1,135 +1,106 @@
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.db import models
-
-from core.models import BaseModel
-
-
-User = get_user_model()
+from django.urls import reverse
 
 
-class Category(BaseModel):
-    """Категория поста (например, «Путешествия», «Еда» и т.п.)."""
-
-    title = models.CharField(
-        max_length=256,
-        verbose_name='Заголовок',
-    )
-    description = models.TextField(
-        verbose_name='Описание',
-    )
-    slug = models.SlugField(
-        unique=True,
-        verbose_name='Идентификатор',
-        help_text=(
-            'Идентификатор страницы для URL; разрешены символы латиницы, '
-            'цифры, дефис и подчёркивание.'
-        ),
-    )
+class PublishedModel(models.Model):
+    is_published = models.BooleanField('Опубликовано', default=True)
+    created_at = models.DateTimeField('Добавлено', auto_now_add=True)
 
     class Meta:
-        verbose_name = 'категория'
-        verbose_name_plural = 'Категории'
+        abstract = True
 
-    def str(self):
-        """Строковое представление категории — её заголовок."""
+
+class Category(PublishedModel):
+    title = models.CharField('Заголовок', max_length=256)
+    description = models.TextField('Описание')
+    slug = models.SlugField('Слаг', unique=True, max_length=64)
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+        ordering = ('title',)
+
+    def str(self) -> str:
         return self.title
 
 
-class Location(BaseModel):
-    """Локация, с которой связан пост (город, место и т.п.)."""
-
-    name = models.CharField(
-        max_length=256,
-        verbose_name='Название места',
-    )
+class Location(PublishedModel):
+    name = models.CharField('Название места', max_length=256)
 
     class Meta:
-        verbose_name = 'местоположение'
+        verbose_name = 'Местоположение'
         verbose_name_plural = 'Местоположения'
+        ordering = ('name',)
 
-    def str(self):
-        """Строковое представление локации — её название."""
+    def str(self) -> str:
         return self.name
 
 
-class Post(BaseModel):
-    """Публикация в блоге."""
-
-    title = models.CharField(
-        max_length=256,
-        verbose_name='Заголовок',
-    )
-    text = models.TextField(
-        verbose_name='Текст',
-    )
-    pub_date = models.DateTimeField(
-        verbose_name='Дата и время публикации',
-        help_text=(
-            'Если установить дату и время в будущем — можно делать '
-            'отложенные публикации.'
-        ),
-    )
+class Post(PublishedModel):
+    title = models.CharField('Заголовок', max_length=256)
+    text = models.TextField('Текст')
+    pub_date = models.DateTimeField('Дата и время публикации')
     author = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        verbose_name='Автор публикации',
+        related_name='posts',
+        verbose_name='Автор',
     )
     location = models.ForeignKey(
         Location,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name='posts',
         verbose_name='Местоположение',
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         null=True,
+        related_name='posts',
         verbose_name='Категория',
     )
     image = models.ImageField(
-        upload_to='blogs_images',
-        null=True,
+        'Изображение',
+        upload_to='posts_images',
         blank=True,
-        verbose_name='Фото',
+        null=True,
     )
 
     class Meta:
-        verbose_name = 'публикация'
+        verbose_name = 'Публикация'
         verbose_name_plural = 'Публикации'
-        default_related_name = 'posts'
+        ordering = ('-pub_date',)
 
-    def str(self):
-        """Строковое представление поста — его заголовок."""
+    def str(self) -> str:
         return self.title
+
+    def get_absolute_url(self):
+        return reverse('blog:post_detail', kwargs={'post_id': self.pk})
 
 
 class Comment(models.Model):
-    """Комментарий к посту."""
-
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        null=True,
-        verbose_name='Автор комментария',
-    )
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
         related_name='comments',
-        null=True,
+        verbose_name='Публикация',
     )
-    text = models.TextField(
-        verbose_name='Текст',
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Автор',
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-    )
+    text = models.TextField('Текст комментария')
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
 
     class Meta:
-        verbose_name = 'комментарий'
+        verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+        ordering = ('created_at',)  # от старых к новым :contentReference[oaicite:1]{index=1}
 
-    def str(self):
-        """Краткое строковое представление комментария (первые 50 символов)."""
-        return self.text[:50]
+    def str(self) -> str:
+        return self.text[:30]
